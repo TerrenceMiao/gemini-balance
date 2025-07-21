@@ -1,10 +1,8 @@
-import { Router } from 'express';
+import { FastifyInstance } from 'fastify';
 import geminiRoutes from './gemini';
 import openaiRoutes from './openai';
 
-const router = Router();
-
-router.use('/gemini', geminiRoutes);
-router.use('/openai', openaiRoutes);
-
-export default router;
+export default async function (fastify: FastifyInstance) {
+    fastify.register(geminiRoutes, { prefix: '/gemini' });
+    fastify.register(openaiRoutes, { prefix: '/openai' });
+}

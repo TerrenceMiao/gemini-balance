@@ -1,11 +1,11 @@
-import express, { Express } from 'express';
+import Fastify, { FastifyInstance } from 'fastify';
 import dotenv from 'dotenv';
 import routes from './routes';
 import KeyManager from './services/KeyManager';
 
 dotenv.config();
 
-const app: Express = express();
+const fastify: FastifyInstance = Fastify({ logger: true });
 const port = process.env.PORT || 8000;
 
 // Load API keys into KeyManager
@@ -16,9 +16,16 @@ if (process.env.OPENAI_API_KEY) {
     KeyManager.addKey('openai', process.env.OPENAI_API_KEY);
 }
 
-app.use(express.json());
-app.use('/v1', routes);
+fastify.register(routes, { prefix: '/v1' });
 
-app.listen(port, () => {
-  console.log(`[server]: Server is running at http://localhost:${port}`);
-});
+const start = async () => {
+  try {
+    await fastify.listen({ port: Number(port) });
+    console.log(`[server]: Server is running at http://localhost:${port}`);
+  } catch (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+};
+
+start();

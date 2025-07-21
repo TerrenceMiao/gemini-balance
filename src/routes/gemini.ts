@@ -1,21 +1,19 @@
-import { Router, Request, Response } from 'express';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import GeminiChatService from '../services/GeminiChatService';
 import { GeminiChatCompletionRequest } from '../types/gemini';
 
-const router = Router();
-
-router.post('/chat/completions', async (req: Request, res: Response) => {
-    try {
-        const request: GeminiChatCompletionRequest = req.body;
-        const result = await GeminiChatService.complete(request);
-        res.json(result);
-    } catch (error) {
-        if (error instanceof Error) {
-            res.status(500).json({ error: error.message });
-        } else {
-            res.status(500).json({ error: 'An unknown error occurred' });
+export default async function (fastify: FastifyInstance) {
+    fastify.post('/chat/completions', async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const reqBody = request.body as GeminiChatCompletionRequest;
+            const result = await GeminiChatService.complete(reqBody);
+            reply.send(result);
+        } catch (error) {
+            if (error instanceof Error) {
+                reply.status(500).send({ error: error.message });
+            } else {
+                reply.status(500).send({ error: 'An unknown error occurred' });
+            }
         }
-    }
-});
-
-export default router;
+    });
+}
