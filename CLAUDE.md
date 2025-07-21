@@ -1,4 +1,4 @@
-# CLAUDE.md
+# From Claude Code
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -213,3 +213,91 @@ The system processes various input formats:
 - **Images**: Upload, processing, and generation via Imagen models
 - **Audio/Video**: Automatic format detection and Base64 conversion
 - **Files**: Comprehensive upload system with multiple provider support
+
+
+# From Gemini Pro
+
+## High-Level Design
+
+Gemini Balance is designed as a modular and scalable web application using the **FastAPI** framework. Its primary purpose is to act as a **proxy and load balancer** for the Google Gemini API. The architecture follows a standard separation of concerns pattern, making it maintainable and extensible.
+
+Here are the key design principles:
+
+- **Modular Structure:** The application is divided into distinct modules, each with a specific responsibility (e.g., routing, services, configuration). This is evident from the directory structure outlined in the `README.md`.
+- **Configuration-Driven:** Most of the application's behavior is controlled through environment variables and a web-based admin panel, allowing for dynamic updates without service restarts.
+- **Asynchronous Processing:** Built on FastAPI, the application is asynchronous by nature, which is ideal for handling I/O-bound operations like making API requests to the Gemini service efficiently.
+- **Service-Oriented:** Business logic is encapsulated within "service" layers, which are called by the API "routers." This keeps the API endpoints clean and focused on handling HTTP requests and responses.
+- **Extensibility:** The design supports adding new features like different image hosting providers, custom models, and proxy formats (like OpenAI compatibility) by adding new modules or extending existing ones.
+
+## Implementation Structure
+
+The implementation details are reflected in the project's directory structure. Here is a breakdown of the key directories and their roles:
+
+- `main.py`: The entry point of the application. It initializes the FastAPI app, includes the routers, and sets up middleware.
+- `config/`: Manages application configuration. `config.py` loads settings from environment variables (`.env` file) and makes them available throughout the application.
+- `core/`: Contains the core application setup.
+  * `application.py`: Creates and configures the FastAPI application instance.
+  * `security.py`: Handles security-related functions, such as token validation and authentication checks.
+- `database/`: Manages database connections and models.
+  * `models.py`: Defines the SQLAlchemy models for database tables (e.g., for logging or key status).
+  * `connection.py`: Handles the database session and engine creation.
+- `router/`: Defines the API endpoints. Each file corresponds to a set of related routes.
+  * `gemini_routes.py`: Handles requests for the native Gemini API format.
+  * `openai_routes.py`: Handles requests for the OpenAI compatible API format.
+  * `config_routes.py`: Provides endpoints for the admin panel to manage configuration.
+- `service/`: Contains the business logic of the application.
+  * `chat/`: Logic for handling chat completions for different API formats.
+  * `key/`: `key_manager.py` is the core of the load balancing, responsible for selecting, rotating, and managing the status of API keys.
+  * `image/`: Logic for handling image generation and uploading.
+- `handler/`: Contains components that process requests and responses.
+  * `retry_handler.py`: Implements the logic for retrying failed API requests.
+  * `stream_optimizer.py`: Optimizes the streaming response for a better user experience.
+- `middleware/`: Custom FastAPI middleware.
+  * `request_logging_middleware.py`: Logs incoming requests for monitoring and debugging.
+- `scheduler/`: For running background tasks.
+  * `scheduled_tasks.py`: Contains tasks that run periodically, such as checking the status of disabled API keys to see if they have recovered.
+- `templates/` and `static/`: Contain the HTML templates and static assets (CSS, JavaScript) for the web-based admin and status pages.
+
+## Architectural Flow Diagram
+Here is a Mermaid diagram illustrating the request flow and architecture:
+
+```mermaid
+graph TD
+    subgraph Client
+        A[User/Client Application]
+    end
+
+    subgraph Gemini Balance Proxy
+        B[FastAPI Application]
+        C[Authentication Middleware]
+        D[API Router]
+        E[Chat Service]
+        F[Key Manager]
+        G[Retry Handler]
+        H[Database]
+    end
+
+    subgraph External Services
+        I[Google Gemini API]
+        J[Image Hosting Service]
+    end
+
+    A -- API Request with Auth Token --> B
+    B -- Passes Request --> C
+    C -- Validates Token --> D
+    D -- Routes to appropriate service --> E
+    E -- Requests a key --> F
+    F -- Provides an active API Key --> E
+    E -- Makes API call via Retry Handler --> G
+    G -- Forwards request with Key --> I
+    I -- Returns Response --> G
+    G -- Returns Response --> E
+    E -- Processes and returns response --> D
+    D -- Sends response to client --> A
+
+    E -- If image generation --> J
+    J -- Returns image URL --> E
+
+    F -- Updates Key Status --> H
+    B -- Logs Requests/Errors --> H
+```
