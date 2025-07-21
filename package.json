@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "[Read this document in Chinese](README_ZH.md)",
   "main": "index.js",
+  "bin": {
+    "gemini-balance": "./bin/cli.js"
+  },
   "scripts": {
     "start": "ts-node src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
