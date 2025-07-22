@@ -1,14 +1,16 @@
+import { ServiceName } from '../types/service';
+
 class KeyManager {
     private keys: { [service: string]: string[] } = {};
 
-    addKey(service: string, key: string) {
+    addKey(service: ServiceName, key: string) {
         if (!this.keys[service]) {
             this.keys[service] = [];
         }
         this.keys[service].push(key);
     }
 
-    getKey(service: string): string | null {
+    getKey(service: ServiceName): string | null {
         const serviceKeys = this.keys[service];
         if (!serviceKeys || serviceKeys.length === 0) {
             return null;

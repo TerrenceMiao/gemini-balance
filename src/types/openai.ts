@@ -1,6 +1,6 @@
-export interface OpenAIChatCompletionRequest {
-    prompt: string;
-}
+import { ChatCompletionRequest } from './common';
+
+export interface OpenAIChatCompletionRequest extends ChatCompletionRequest {
 
 export interface OpenAIChatCompletionResponse {
     response: string;

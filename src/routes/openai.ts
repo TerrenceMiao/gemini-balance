@@ -1,11 +1,23 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import OpenAIChatService from '../services/OpenAIChatService';
-import { OpenAIChatCompletionRequest } from '../types/openai';
+import { ChatCompletionRequest } from '../types/common';
+
+const openaiChatCompletionSchema = {
+    type: 'object',
+    required: ['prompt'],
+    properties: {
+        prompt: { type: 'string' }
+    }
+};
 
 export default async function (fastify: FastifyInstance) {
-    fastify.post('/chat/completions', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.post('/chat/completions', {
+        schema: {
+            body: openaiChatCompletionSchema
+        }
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         try {
-            const reqBody = request.body as OpenAIChatCompletionRequest;
+            const reqBody = request.body as ChatCompletionRequest;
             const result = await OpenAIChatService.complete(reqBody);
             reply.send(result);
         } catch (error) {

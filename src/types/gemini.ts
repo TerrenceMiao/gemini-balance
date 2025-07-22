@@ -1,6 +1,6 @@
-export interface GeminiChatCompletionRequest {
-    prompt: string;
-}
+import { ChatCompletionRequest } from './common';
+
+export interface GeminiChatCompletionRequest extends ChatCompletionRequest {
 
 export interface GeminiChatCompletionResponse {
     response: string;

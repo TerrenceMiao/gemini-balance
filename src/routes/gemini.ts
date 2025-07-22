@@ -1,11 +1,23 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import GeminiChatService from '../services/GeminiChatService';
-import { GeminiChatCompletionRequest } from '../types/gemini';
+import { ChatCompletionRequest } from '../types/common';
+
+const geminiChatCompletionSchema = {
+    type: 'object',
+    required: ['prompt'],
+    properties: {
+        prompt: { type: 'string' }
+    }
+};
 
 export default async function (fastify: FastifyInstance) {
-    fastify.post('/chat/completions', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.post('/chat/completions', {
+        schema: {
+            body: geminiChatCompletionSchema
+        }
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         try {
-            const reqBody = request.body as GeminiChatCompletionRequest;
+            const reqBody = request.body as ChatCompletionRequest;
             const result = await GeminiChatService.complete(reqBody);
             reply.send(result);
         } catch (error) {
