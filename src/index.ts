@@ -27,7 +27,7 @@ const fastify: FastifyInstance = Fastify({
 });
 
 // Get port from environment or use default
-const port = process.env.PORT || 12000;
+const port = process.env.PORT || 3000;
 
 // Load API keys into KeyManager
 if (process.env.GEMINI_API_KEY) {
