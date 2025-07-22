@@ -1,18 +1,22 @@
 {
-  "name": "gemini-balance",
+  "name": "gemini-proxy",
   "version": "1.0.0",
-  "description": "[Read this document in Chinese](README_ZH.md)",
-  "main": "index.js",
+  "description": "A lightweight proxy server that provides a unified API interface for both Google's Gemini and OpenAI's GPT models",
+  "main": "dist/index.js",
   "bin": {
-    "gemini-balance": "./bin/cli.js"
+    "gemini-proxy": "./bin/cli.js"
   },
   "scripts": {
     "start": "ts-node src/index.ts",
+    "dev": "ts-node-dev --respawn src/index.ts",
+    "build": "tsc",
+    "serve": "node dist/index.js",
+    "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["gemini", "openai", "proxy", "api", "gpt", "llm"],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "axios": "^1.10.0",
     "dotenv": "^17.2.0",
@@ -20,7 +24,11 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.15",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.56.0",
     "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"
   }
 }
