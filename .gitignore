@@ -260,4 +260,8 @@ $RECYCLE.BIN/
 tests/
 default_db
 
+.claude/
+
+.serena/
+
 node_modules/

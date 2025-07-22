@@ -6,7 +6,7 @@ import KeyManager from './services/KeyManager';
 dotenv.config();
 
 const fastify: FastifyInstance = Fastify({ logger: true });
-const port = process.env.PORT || 8000;
+const port = process.env.PORT || 12000;
 
 // Load API keys into KeyManager
 if (process.env.GEMINI_API_KEY) {
