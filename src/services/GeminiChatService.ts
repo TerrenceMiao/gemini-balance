@@ -3,6 +3,7 @@ import KeyManager from './KeyManager';
 import { ChatCompletionRequest } from '../types/common';
 import { GeminiChatCompletionResponse } from '../types/gemini';
 import { ServiceName } from '../types/service';
+import { ApiError } from '../errors/ApiError';
 
 // Default timeout in milliseconds
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
@@ -10,7 +11,7 @@ const DEFAULT_TIMEOUT = 30000; // 30 seconds
 /**
  * Service for interacting with Google's Gemini API
  */
-class GeminiChatService {
+export class GeminiChatService {
     private axiosInstance: AxiosInstance;
     private readonly baseURL: string;
     private readonly timeout: number;
@@ -48,9 +49,15 @@ class GeminiChatService {
             throw new Error('No API key available for Gemini');
         }
 
-        // Default to gemini-pro model unless specified in environment
-        const model = process.env.GEMINI_MODEL || 'gemini-pro';
+        // Use model from request or environment, fallback to gemini-pro
+        const model = request.model || process.env.GEMINI_MODEL || 'gemini-pro';
         const startTime = Date.now();
+
+        // Use parameters from request or defaults
+        const temperature = request.temperature ?? 0.7;
+        const maxOutputTokens = request.max_tokens ?? 2048;
+        const topP = request.top_p ?? 0.95;
+        const topK = request.top_k ?? 40;
         
         try {
             const response = await this.axiosInstance.post(
@@ -61,12 +68,11 @@ class GeminiChatService {
                             text: request.prompt
                         }]
                     }],
-                    // Optional parameters that could be added
                     generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 2048,
-                        topP: 0.95,
-                        topK: 40
+                        temperature,
+                        maxOutputTokens,
+                        topP,
+                        topK
                     }
                 }
             );
@@ -91,20 +97,20 @@ class GeminiChatService {
                 
                 // Handle specific error cases
                 if (statusCode === 429) {
-                    throw new Error(`Gemini API rate limit exceeded: ${errorMessage}`);
+                    throw new ApiError(`Gemini API rate limit exceeded: ${errorMessage}`, 429);
                 } else if (statusCode === 401 || statusCode === 403) {
-                    throw new Error(`Gemini API authentication error: ${errorMessage}`);
+                    throw new ApiError(`Gemini API authentication error: ${errorMessage}`, statusCode);
                 } else if (statusCode === 404) {
-                    throw new Error(`Gemini API model not found: ${errorMessage}`);
+                    throw new ApiError(`Gemini API model not found: ${errorMessage}`, 404);
                 } else if (axiosError.code === 'ECONNABORTED') {
-                    throw new Error(`Gemini API request timed out after ${this.timeout}ms`);
+                    throw new ApiError(`Gemini API request timed out after ${this.timeout}ms`, 504);
                 } else {
-                    throw new Error(`Gemini API error (${statusCode}): ${errorMessage}`);
+                    throw new ApiError(`Gemini API error (${statusCode}): ${errorMessage}`, statusCode || 500);
                 }
             } else if (error instanceof Error) {
                 throw error;
             } else {
-                throw new Error('An unknown error occurred during Gemini API call');
+                throw new ApiError('An unknown error occurred during Gemini API call', 500);
             }
         }
     }

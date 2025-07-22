@@ -12,9 +12,16 @@
     "build": "tsc",
     "serve": "node dist/index.js",
     "lint": "eslint . --ext .ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --passWithNoTests"
   },
-  "keywords": ["gemini", "openai", "proxy", "api", "gpt", "llm"],
+  "keywords": [
+    "gemini",
+    "openai",
+    "proxy",
+    "api",
+    "gpt",
+    "llm"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -23,10 +30,12 @@
     "fastify": "^5.4.0"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.0.15",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.56.0",
+    "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"

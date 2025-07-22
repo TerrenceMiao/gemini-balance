@@ -3,11 +3,21 @@ import dotenv from 'dotenv';
 import routes from './routes';
 import KeyManager from './services/KeyManager';
 import { ServiceName } from './types/service';
+import { validateConfig } from './config';
+import { ApiError } from './errors/ApiError';
 // Import config if needed later
 // import { config } from './config';
 
 // Load environment variables
 dotenv.config();
+
+// Validate configuration at startup
+try {
+  validateConfig();
+} catch (err) {
+  console.error(`[config]: ${err instanceof Error ? err.message : err}`);
+  process.exit(1);
+}
 
 // Create Fastify instance with configuration
 const fastify: FastifyInstance = Fastify({ 
@@ -67,10 +77,18 @@ fastify.ready(() => {
 // Add global error handler
 fastify.setErrorHandler((error, _request, reply) => {
   fastify.log.error(error);
-  reply.status(500).send({ 
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'production' ? 'An error occurred' : error.message 
-  });
+  
+  if (error instanceof ApiError) {
+    reply.status(error.statusCode).send({ 
+      error: 'API Error',
+      message: error.message 
+    });
+  } else {
+    reply.status(500).send({ 
+      error: 'Internal Server Error',
+      message: process.env.NODE_ENV === 'production' ? 'An error occurred' : (error as Error).message 
+    });
+  }
 });
 
 /**

@@ -3,6 +3,7 @@ import KeyManager from './KeyManager';
 import { ChatCompletionRequest } from '../types/common';
 import { OpenAIChatCompletionResponse } from '../types/openai';
 import { ServiceName } from '../types/service';
+import { ApiError } from '../errors/ApiError';
 
 // Default timeout in milliseconds
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
@@ -93,20 +94,20 @@ class OpenAIChatService {
                 
                 // Handle specific error cases
                 if (statusCode === 429) {
-                    throw new Error(`OpenAI API rate limit exceeded: ${errorMessage}`);
+                    throw new ApiError(`OpenAI API rate limit exceeded: ${errorMessage}`, 429);
                 } else if (statusCode === 401 || statusCode === 403) {
-                    throw new Error(`OpenAI API authentication error: ${errorMessage}`);
+                    throw new ApiError(`OpenAI API authentication error: ${errorMessage}`, statusCode);
                 } else if (statusCode === 404) {
-                    throw new Error(`OpenAI API model not found: ${errorMessage}`);
+                    throw new ApiError(`OpenAI API model not found: ${errorMessage}`, 404);
                 } else if (axiosError.code === 'ECONNABORTED') {
-                    throw new Error(`OpenAI API request timed out after ${this.timeout}ms`);
+                    throw new ApiError(`OpenAI API request timed out after ${this.timeout}ms`, 504);
                 } else {
-                    throw new Error(`OpenAI API error (${statusCode}): ${errorMessage}`);
+                    throw new ApiError(`OpenAI API error (${statusCode}): ${errorMessage}`, statusCode || 500);
                 }
             } else if (error instanceof Error) {
                 throw error;
             } else {
-                throw new Error('An unknown error occurred during OpenAI API call');
+                throw new ApiError('An unknown error occurred during OpenAI API call', 500);
             }
         }
     }
