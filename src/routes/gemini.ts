@@ -34,6 +34,7 @@ export default async function (fastify: FastifyInstance) {
             body: geminiChatCompletionSchema
         }
     }, async (request: FastifyRequest, reply: FastifyReply) => {
+        console.log("################");
         const reqBody = request.body as ChatCompletionRequest;
         
         // Log request (excluding sensitive data)

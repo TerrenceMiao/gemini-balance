@@ -50,7 +50,7 @@ export class GeminiChatService {
         }
 
         // Use model from request or environment, fallback to gemini-pro
-        const model = request.model || process.env.GEMINI_MODEL || 'gemini-pro';
+        const model = request.model || process.env.GEMINI_MODEL || 'gemini-2.5-pro';
         const startTime = Date.now();
 
         // Use parameters from request or defaults
@@ -60,6 +60,7 @@ export class GeminiChatService {
         const topK = request.top_k ?? 40;
         
         try {
+            console.log("Request: " + `/models/${model}:generateContent?key=${apiKey}`);
             const response = await this.axiosInstance.post(
                 `/models/${model}:generateContent?key=${apiKey}`,
                 {
