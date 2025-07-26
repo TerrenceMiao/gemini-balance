@@ -1,0 +1,440 @@
+<%- include('base', { title: 'API密钥状态 - Gemini Balance', body: `
+<div class="container max-w-6xl mx-auto px-4">
+  <div class="glass-card rounded-2xl shadow-xl p-6 md:p-8">
+    <div class="absolute top-6 right-6 flex items-center gap-3">
+      <div class="flex items-center text-sm select-none font-semibold" style="color: #1f2937 !important;">
+        <span class="mr-2">自动刷新</span>
+        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+          <input type="checkbox" name="autoRefreshToggle" id="autoRefreshToggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" />
+          <label for="autoRefreshToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+        </div>
+      </div>
+      <button class="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full w-8 h-8 flex items-center justify-center text-primary-600 transition-all duration-300" onclick="refreshPage(this)" title="手动刷新">
+        <i class="fas fa-sync-alt"></i>
+      </button>
+      <div class="dropdown-toggle relative">
+        <button id="dropdownMenuButton" class="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full w-8 h-8 flex items-center justify-center text-primary-600 transition-all duration-300" onclick="toggleDropdownMenu()" title="更多操作">
+          <i class="fas fa-ellipsis-v"></i>
+        </button>
+        <div id="dropdownMenu" class="dropdown-menu">
+          <button class="dropdown-item" onclick="copyAllKeys()">
+            <i class="fas fa-copy"></i>
+            <span>复制全部密钥</span>
+          </button>
+          <button class="dropdown-item" onclick="verifyAllKeys()">
+            <i class="fas fa-check-double"></i>
+            <span>验证所有密钥</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <h1 class="text-3xl font-extrabold text-center text-gray-800 mb-4">
+      <img src="/static/icons/logo.png" alt="Gemini Balance Logo" class="h-9 inline-block align-middle mr-2" />
+      Gemini Balance - 监控面板
+    </h1>
+
+    <div class="nav-buttons-container flex justify-center mb-8 overflow-x-auto gap-2">
+      <a href="/config" class="nav-link whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg text-gray-700 hover:text-gray-900 transition-all duration-200" style="background-color: rgba(229, 231, 235, 0.8)">
+        <i class="fas fa-cog"></i> 配置编辑
+      </a>
+      <a href="/keys" class="main-nav-btn whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200" style="background-color: #3b82f6 !important; color: #ffffff !important;">
+        <i class="fas fa-tachometer-alt"></i> 监控面板
+      </a>
+      <a href="/logs" class="nav-link whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg text-gray-700 hover:text-gray-900 transition-all duration-200" style="background-color: rgba(229, 231, 235, 0.8)">
+        <i class="fas fa-exclamation-triangle"></i> 错误日志
+      </a>
+    </div>
+
+    <div class="stats-dashboard animate-fade-in" style="animation-delay: 0.1s">
+      <div class="stats-card">
+        <div class="stats-card-header">
+          <h3 class="stats-card-title">
+            <i class="fas fa-key"></i>
+            <span>密钥统计</span>
+          </h3>
+          <span class="text-xs text-gray-500">总计: <%= total_keys %></span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-item stat-primary" title="总密钥数">
+            <div class="stat-value"><%= total_keys %></div>
+            <div class="stat-label">总密钥数</div>
+            <i class="stat-icon fas fa-key"></i>
+          </div>
+          <div class="stat-item stat-success" title="有效密钥">
+            <div class="stat-value"><%= valid_key_count %></div>
+            <div class="stat-label">有效密钥</div>
+            <i class="stat-icon fas fa-check-circle"></i>
+          </div>
+          <div class="stat-item stat-danger" title="无效密钥">
+            <div class="stat-value"><%= invalid_key_count %></div>
+            <div class="stat-label">无效密钥</div>
+            <i class="stat-icon fas fa-times-circle"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-card">
+        <div class="stats-card-header">
+          <h3 class="stats-card-title">
+            <i class="fas fa-chart-line"></i>
+            <span>API调用统计</span>
+          </h3>
+          <span class="text-xs text-gray-500">本月: <%= api_stats.calls_month.total %></span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-item stat-warning cursor-pointer hover:bg-amber-100" title="点击查看1分钟内调用详情" data-period="1m" onclick="showApiCallDetails('1m', '<%= api_stats.calls_1m.total %>', '<%= api_stats.calls_1m.success %>', '<%= api_stats.calls_1m.failure %>')">
+            <div class="stat-value"><%= api_stats.calls_1m.total %></div>
+            <div class="stat-label">1分钟调用</div>
+            <i class="stat-icon fas fa-stopwatch"></i>
+          </div>
+          <div class="stat-item stat-info cursor-pointer hover:bg-blue-100" title="点击查看1小时内调用详情" data-period="1h" onclick="showApiCallDetails('1h', '<%= api_stats.calls_1h.total %>', '<%= api_stats.calls_1h.success %>', '<%= api_stats.calls_1h.failure %>')">
+            <div class="stat-value"><%= api_stats.calls_1h.total %></div>
+            <div class="stat-label">1小时调用</div>
+            <i class="stat-icon fas fa-hourglass-half"></i>
+          </div>
+          <div class="stat-item stat-primary cursor-pointer hover:bg-indigo-100" title="点击查看24小时内调用详情" data-period="24h" onclick="showApiCallDetails('24h', '<%= api_stats.calls_24h.total %>', '<%= api_stats.calls_24h.success %>', '<%= api_stats.calls_24h.failure %>')">
+            <div class="stat-value"><%= api_stats.calls_24h.total %></div>
+            <div class="stat-label">24小时调用</div>
+            <i class="stat-icon fas fa-calendar-day"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-card mb-6 animate-fade-in" style="animation-delay: 0.2s">
+      <div class="stats-card-header cursor-pointer" onclick="toggleSection(this, 'validKeys')">
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <i class="fas fa-chevron-down toggle-icon text-primary-600"></i>
+          <i class="fas fa-check-circle text-success-500"></i>
+          <h2 class="text-lg font-semibold whitespace-nowrap">
+            有效密钥列表 (<%= valid_key_count %>)
+          </h2>
+        </div>
+        <div class="flex items-center gap-x-4 gap-y-2 flex-grow flex-wrap justify-start md:justify-center">
+          <div class="flex items-center gap-1">
+            <label for="failCountThreshold" class="text-sm select-none whitespace-nowrap font-semibold" style="color: #1f2937 !important;">失败次数≥</label>
+            <input type="number" id="failCountThreshold" value="0" min="0" class="form-input h-7 w-16 px-2 py-1 text-sm border rounded focus:ring-primary-500 focus:border-primary-500" onclick="event.stopPropagation();" />
+          </div>
+          <div class="flex items-center gap-1">
+            <label for="keySearchInput" class="text-sm select-none whitespace-nowrap font-semibold" style="color: #1f2937 !important;"><i class="fas fa-search mr-1"></i>搜索</label>
+            <input type="search" id="keySearchInput" placeholder="输入密钥..." class="form-input h-7 w-32 px-2 py-1 text-sm border rounded focus:ring-primary-500 focus:border-primary-500" onclick="event.stopPropagation();" />
+          </div>
+          <div class="flex items-center gap-1">
+            <label for="itemsPerPageSelect" class="text-sm select-none whitespace-nowrap font-semibold" style="color: #1f2937 !important;">每页</label>
+            <select id="itemsPerPageSelect" class="form-select h-7 px-2 py-1 text-sm border rounded focus:ring-primary-500 focus:border-primary-500" onclick="event.stopPropagation();">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="500">500</option>
+            </select>
+            <span class="text-sm select-none font-semibold" style="color: #1f2937 !important;">项</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-1 flex-shrink-0" onclick="event.stopPropagation();">
+          <input type="checkbox" id="selectAllValid" class="form-checkbox h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500" onchange="toggleSelectAll('valid', this.checked)" />
+          <label for="selectAllValid" class="text-sm select-none whitespace-nowrap font-semibold" style="color: #1f2937 !important;">全选</label>
+        </div>
+      </div>
+
+      <div id="validBatchActions" class="p-3 border-t hidden flex items-center flex-wrap gap-3" style="background-color: rgba(249, 250, 251, 0.95); border-color: rgba(0, 0, 0, 0.08);">
+        <span class="text-sm font-semibold whitespace-nowrap" style="color: #1f2937 !important;">已选择 <span id="validSelectedCount">0</span> 项</span>
+        <button class="flex items-center gap-1 bg-success-600 hover:bg-success-700 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 disabled:cursor-not-allowed" onclick="event.stopPropagation(); showVerifyModal('valid', event)" disabled>
+          <i class="fas fa-check-double"></i> 批量验证
+        </button>
+        <button class="flex items-center gap-1 bg-gray-500 hover:bg-gray-600 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 disabled:cursor-not-allowed" style="background-color: #6b7280 !important; color: #ffffff !important;" onclick="event.stopPropagation(); resetAllKeysFailCount('valid', event)" data-reset-type="valid" disabled>
+          <i class="fas fa-redo-alt"></i> 批量重置
+        </button>
+        <button class="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 disabled:cursor-not-allowed" onclick="event.stopPropagation(); copySelectedKeys('valid')" disabled>
+          <i class="fas fa-copy"></i> 批量复制
+        </button>
+        <button class="flex items-center gap-1 bg-red-800 hover:bg-red-900 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 disabled:cursor-not-allowed" onclick="event.stopPropagation(); showDeleteConfirmationModal('valid', event)" disabled>
+          <i class="fas fa-trash-alt"></i> 批量删除
+        </button>
+      </div>
+
+      <div class="key-content p-4 bg-white bg-opacity-40">
+        <ul id="validKeys" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <li class="text-center text-gray-500 py-4 col-span-full">
+             <i class="fas fa-spinner fa-spin"></i> Loading keys...
+          </li>
+        </ul>
+        <div id="validPaginationControls" class="flex justify-center items-center mt-4 space-x-2">
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-card mb-6 animate-fade-in" style="animation-delay: 0.4s">
+      <div class="stats-card-header cursor-pointer" onclick="toggleSection(this, 'invalidKeys')">
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <i class="fas fa-chevron-down toggle-icon text-primary-600"></i>
+          <i class="fas fa-times-circle text-danger-500"></i>
+          <h2 class="text-lg font-semibold whitespace-nowrap">
+            无效密钥列表 (<%= invalid_key_count %>)
+          </h2>
+        </div>
+        <div class="flex items-center gap-x-4 gap-y-2 flex-grow flex-wrap justify-start md:justify-center">
+          <div class="flex items-center gap-1">
+            <label for="invalidFailCountThreshold" class="text-sm select-none whitespace-nowrap font-semibold" style="color: #1f2937 !important;">失败次数≥</label>
+            <input type="number" id="invalidFailCountThreshold" value="0" min="0" class="form-input h-7 w-16 px-2 py-1 text-sm border rounded focus:ring-primary-500 focus:border-primary-500" onclick="event.stopPropagation();" />
+          </div>
+          <div class="flex items-center gap-1">
+            <label for="invalidKeySearchInput" class="text-sm select-none whitespace-nowrap font-semibold" style="color: #1f2937 !important;"><i class="fas fa-search mr-1"></i>搜索</label>
+            <input type="search" id="invalidKeySearchInput" placeholder="输入密钥..." class="form-input h-7 w-32 px-2 py-1 text-sm border rounded focus:ring-primary-500 focus:border-primary-500" onclick="event.stopPropagation();" />
+          </div>
+          <div class="flex items-center gap-1">
+            <label for="invalidItemsPerPageSelect" class="text-sm select-none whitespace-nowrap font-semibold" style="color: #1f2937 !important;">每页</label>
+            <select id="invalidItemsPerPageSelect" class="form-select h-7 px-2 py-1 text-sm border rounded focus:ring-primary-500 focus:border-primary-500" onclick="event.stopPropagation();">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="500">500</option>
+            </select>
+            <span class="text-sm select-none font-semibold" style="color: #1f2937 !important;">项</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-1 flex-shrink-0" onclick="event.stopPropagation();">
+          <input type="checkbox" id="selectAllInvalid" class="form-checkbox h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500" onchange="toggleSelectAll('invalid', this.checked)" />
+          <label for="selectAllInvalid" class="text-sm select-none whitespace-nowrap font-semibold" style="color: #1f2937 !important;">全选</label>
+        </div>
+      </div>
+
+      <div id="invalidBatchActions" class="p-3 border-t hidden flex items-center flex-wrap gap-3" style="background-color: rgba(249, 250, 251, 0.95); border-color: rgba(0, 0, 0, 0.08);">
+        <span class="text-sm font-semibold whitespace-nowrap" style="color: #1f2937 !important;">已选择 <span id="invalidSelectedCount">0</span> 项</span>
+        <button class="flex items-center gap-1 bg-success-600 hover:bg-success-700 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 disabled:cursor-not-allowed" onclick="event.stopPropagation(); showVerifyModal('invalid', event)" disabled>
+          <i class="fas fa-check-double"></i> 批量验证
+        </button>
+        <button class="flex items-center gap-1 bg-gray-500 hover:bg-gray-600 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 disabled:cursor-not-allowed" style="background-color: #6b7280 !important; color: #ffffff !important;" onclick="event.stopPropagation(); resetAllKeysFailCount('invalid', event)" data-reset-type="invalid" disabled>
+          <i class="fas fa-redo-alt"></i> 批量重置
+        </button>
+        <button class="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 disabled:cursor-not-allowed" onclick="event.stopPropagation(); copySelectedKeys('invalid')" disabled>
+          <i class="fas fa-copy"></i> 批量复制
+        </button>
+        <button class="flex items-center gap-1 bg-red-800 hover:bg-red-900 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 disabled:cursor-not-allowed" onclick="event.stopPropagation(); showDeleteConfirmationModal('invalid', event)" disabled>
+          <i class="fas fa-trash-alt"></i> 批量删除
+        </button>
+      </div>
+
+      <div class="key-content p-4 bg-white bg-opacity-40">
+        <ul id="invalidKeys" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <li class="text-center text-gray-500 py-4 col-span-full">
+             <i class="fas fa-spinner fa-spin"></i> Loading keys...
+          </li>
+        </ul>
+        <div id="invalidPaginationControls" class="flex justify-center items-center mt-4 space-x-2">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scroll-buttons">
+  <button class="scroll-button" onclick="scrollToTop()" title="回到顶部">
+    <i class="fas fa-chevron-up"></i>
+  </button>
+  <button class="scroll-button" onclick="scrollToBottom()" title="滚动到底部">
+    <i class="fas fa-chevron-down"></i>
+  </button>
+</div>
+
+<div id="notification" class="notification"></div>
+<div id="resetModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg p-6 shadow-xl max-w-md w-full animate-fade-in">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold text-gray-800" id="resetModalTitle">
+        批量重置失败次数
+      </h3>
+      <button onclick="closeResetModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="mb-6">
+      <p class="text-gray-600" id="resetModalMessage"></p>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button onclick="closeResetModal()" class="px-3 py-1.5 text-xs font-medium bg-slate-500 hover:bg-slate-600 text-white rounded-lg transition-colors" style="color: #ffffff !important;">
+        取消
+      </button>
+      <button id="confirmResetBtn" class="px-3 py-1.5 text-xs font-medium bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors">
+        确认
+      </button>
+    </div>
+  </div>
+</div>
+<div id="verifyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg p-6 shadow-xl max-w-md w-full animate-fade-in" style="background-color: rgba(255, 255, 255, 0.98); color: #374151; border-color: rgba(0, 0, 0, 0.08);">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold" id="verifyModalTitle" style="color: #1f2937; font-weight: 600;">
+        批量验证密钥
+      </h3>
+      <button onclick="closeVerifyModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="mb-6">
+      <p style="color: #374151" id="verifyModalMessage" class="mb-4"></p>
+      <div class="flex items-center gap-2">
+        <label for="batchSize" class="text-sm font-medium" style="color: #374151;">每批次验证数量:</label>
+        <input type="number" id="batchSize" value="10" min="1" class="form-input h-8 w-20 px-2 py-1 text-sm border rounded focus:ring-primary-500 focus:border-primary-500">
+      </div>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button onclick="closeVerifyModal()" class="px-3 py-1.5 text-xs font-medium bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors" style="color: #ffffff !important;">
+        取消
+      </button>
+      <button id="confirmVerifyBtn" class="px-3 py-1.5 text-xs font-medium bg-success-600 hover:bg-success-700 text-white rounded-lg transition-colors">
+        确认验证
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="deleteConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg p-6 shadow-xl max-w-md w-full animate-fade-in" style="background-color: rgba(255, 255, 255, 0.98); color: #374151; border-color: rgba(0, 0, 0, 0.08);">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold" id="deleteConfirmModalTitle" style="color: #1f2937; font-weight: 600;">
+        确认删除
+      </h3>
+      <button onclick="closeDeleteConfirmationModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="mb-6">
+      <p style="color: #374151" id="deleteConfirmModalMessage"></p>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button onclick="closeDeleteConfirmationModal()" class="px-3 py-1.5 text-xs font-medium bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors" style="color: #ffffff !important;">
+        取消
+      </button>
+      <button id="confirmDeleteBtn" class="px-3 py-1.5 text-xs font-medium bg-red-700 hover:bg-red-800 text-white rounded-lg transition-colors">
+        确认删除
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="singleKeyDeleteConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="rounded-lg p-6 shadow-xl max-w-md w-full animate-fade-in" style="background-color: rgba(255, 255, 255, 0.98); color: #374151; border-color: rgba(0, 0, 0, 0.08);">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold" id="singleKeyDeleteConfirmModalTitle" style="color: #1f2937; font-weight: 600;">
+        确认删除密钥
+      </h3>
+      <button onclick="closeSingleKeyDeleteConfirmModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="mb-6">
+      <p style="color: #374151" id="singleKeyDeleteConfirmModalMessage"></p>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button onclick="closeSingleKeyDeleteConfirmModal()" class="px-3 py-1.5 text-xs font-medium bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors" style="color: #ffffff !important;">
+        取消
+      </button>
+      <button id="confirmSingleKeyDeleteBtn" class="px-3 py-1.5 text-xs font-medium bg-red-700 hover:bg-red-800 text-white rounded-lg transition-colors">
+        确认删除
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="progressModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg p-6 shadow-xl max-w-2xl w-full animate-fade-in" style="background-color: rgba(255, 255, 255, 0.98); color: #374151; border-color: rgba(0, 0, 0, 0.08);">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold text-gray-800" id="progressModalTitle" style="color: #1f2937; font-weight: 600">
+        批量操作进度
+      </h3>
+      <button onclick="closeProgressModal()" id="closeProgressModalBtn" class="text-gray-500 hover:text-gray-700 focus:outline-none" disabled>
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="mb-4">
+      <p id="progressStatusText" class="text-sm text-gray-600 mb-2">
+        准备开始...
+      </p>
+      <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
+        <div id="progressBar" class="bg-primary-600 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+      <p id="progressPercentage" class="text-center text-sm font-semibold mt-1" style="color: #1f2937">
+        0%
+      </p>
+    </div>
+    <div id="progressLog" class="text-xs max-h-60 overflow-y-auto bg-gray-50 p-3 rounded border border-gray-200 space-y-1 font-mono" style="background-color: rgba(249, 250, 251, 0.95); border-color: rgba(0, 0, 0, 0.08);">
+    </div>
+    <div class="flex justify-end gap-3 mt-6">
+      <button id="progressModalCloseBtn" onclick="closeProgressModal(true)" class="px-4 py-1.5 text-sm font-medium bg-primary-700 hover:bg-primary-800 text-white rounded-lg transition-colors" disabled>
+        完成并刷新
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="resultModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-2xl p-0 shadow-2xl max-w-lg w-full animate-fade-in border border-gray-200">
+    <div class="flex items-center justify-between px-6 pt-6 pb-2 border-b">
+      <h3 class="text-xl font-bold text-gray-800 text-center w-full" id="resultModalTitle" style="letter-spacing: 0.05em">
+        操作结果
+      </h3>
+      <button onclick="closeResultModal()" class="absolute right-6 top-6 text-gray-400 hover:text-gray-700 focus:outline-none text-2xl">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="flex flex-col items-center px-8 pt-6 pb-2">
+      <div id="resultIcon" class="text-6xl mb-3"></div>
+    </div>
+    <div class="px-8 pb-2 w-full">
+      <div id="resultModalMessage" class="text-gray-700 text-base leading-relaxed break-words whitespace-pre-line max-h-80 overflow-y-auto border border-gray-100 rounded-lg bg-gray-50 p-4 shadow-inner" style="font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', 'monospace';">
+      </div>
+    </div>
+    <div class="flex justify-center px-8 pb-6 pt-2">
+      <button id="resultModalConfirmBtn" onclick="closeResultModal()" class="px-5 py-1.5 text-sm font-semibold bg-primary-700 hover:bg-primary-800 text-white rounded-lg shadow transition-colors">
+        确定
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="apiCallDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg p-6 shadow-xl max-w-3xl w-full animate-fade-in">
+    <div class="flex items-center justify-between mb-4 border-b pb-3">
+      <h3 class="text-xl font-semibold text-gray-800" id="apiCallDetailsModalTitle">
+        API 调用详情
+      </h3>
+      <button onclick="closeApiCallDetailsModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none text-xl">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div id="apiCallDetailsContent" class="mb-6 max-h-[60vh] overflow-y-auto pr-2">
+      <div class="text-center py-10">
+        <i class="fas fa-spinner fa-spin text-primary-600 text-3xl"></i>
+        <p class="text-gray-500 mt-2">加载中...</p>
+      </div>
+    </div>
+    <div class="flex justify-end pt-4 border-t">
+      <button onclick="closeApiCallDetailsModal()" class="px-4 py-1.5 text-xs font-medium bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors">
+        关闭
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="keyUsageDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg p-6 shadow-xl max-w-lg w-full animate-fade-in">
+    <div class="flex items-center justify-between mb-4 border-b pb-3">
+      <h3 class="text-xl font-semibold text-gray-800" id="keyUsageDetailsModalTitle">
+        密钥请求详情
+      </h3>
+      <button onclick="closeKeyUsageDetailsModal()" class="text-gray-500 hover:text-gray-700 focus:outline-none text-xl">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div id="keyUsageDetailsContent" class="mb-6 max-h-[50vh] overflow-y-auto pr-2">
+      <div class="text-center py-10">
+        <i class="fas fa-spinner fa-spin text-primary-600 text-3xl"></i>
+        <p class="text-gray-500 mt-2">加载中...</p>
+      </div>
+    </div>
+  </div>
+</div>
+` })}

@@ -1,0 +1,229 @@
+<%- include('base', { title: '错误日志管理 - Gemini Balance', body: `
+<div class="container mx-auto px-4">
+  <div class="rounded-2xl shadow-xl p-6 md:p-8" style="background-color: rgba(80, 60, 160, 0.3); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(150, 130, 230, 0.3);">
+    <h1 class="text-3xl font-extrabold text-center text-gray-800 mb-4">
+      <img src="/static/icons/logo.png" alt="Gemini Balance Logo" class="h-9 inline-block align-middle mr-2" />
+      Gemini Balance - 错误日志
+    </h1>
+
+    <div class="nav-buttons-container flex justify-center mb-8 overflow-x-auto gap-2">
+      <a href="/config" class="nav-link whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg text-gray-700 hover:text-gray-900 transition-all duration-200" style="background-color: rgba(229, 231, 235, 0.8)">
+        <i class="fas fa-cog"></i> 配置编辑
+      </a>
+      <a href="/keys" class="nav-link whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg text-gray-700 hover:text-gray-900 transition-all duration-200" style="background-color: rgba(229, 231, 235, 0.8)">
+        <i class="fas fa-tachometer-alt"></i> 监控面板
+      </a>
+      <a href="/logs" class="main-nav-btn whitespace-nowrap flex items-center justify-center gap-2 px-6 py-3 font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200" style="background-color: #3b82f6 !important; color: #ffffff !important;">
+        <i class="fas fa-exclamation-triangle"></i> 错误日志
+      </a>
+    </div>
+
+    <div class="rounded-xl p-6 shadow-lg animate-fade-in" style="background-color: rgba(70, 50, 150, 0.5); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); border: 1px solid rgba(0, 0, 0, 0.08);">
+      <h2 class="text-xl font-bold mb-6 pb-3 border-b flex items-center gap-2 text-gray-100 border-violet-300 border-opacity-30">
+        <i class="fas fa-bug text-violet-400"></i> 错误日志列表
+      </h2>
+
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto] items-center gap-4 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full">
+          <input type="text" id="keySearch" placeholder="搜索密钥 (部分)" class="px-3 py-1 rounded-lg form-input-themed" />
+          <input type="text" id="errorSearch" placeholder="搜索错误类型/日志" class="px-3 py-1 rounded-lg form-input-themed" />
+          <input type="text" id="errorCodeSearch" placeholder="搜索错误码" class="px-3 py-1 rounded-lg form-input-themed" />
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 col-span-1 sm:col-span-2 lg:col-span-3 mt-2">
+            <div class="flex items-center gap-2">
+              <label class="text-sm text-gray-300 whitespace-nowrap">开始时间:</label>
+              <input type="datetime-local" id="startDate" class="px-3 py-1 rounded-lg text-sm w-full form-input-themed" />
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="text-sm text-gray-300 whitespace-nowrap">结束时间:</label>
+              <input type="datetime-local" id="endDate" class="px-3 py-1 rounded-lg text-sm w-full form-input-themed" />
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <button id="searchBtn" class="flex items-center justify-center px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap">
+            <i class="fas fa-search mr-1.5"></i>搜索
+          </button>
+          <button id="copySelectedKeysBtn" class="flex items-center justify-center px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md whitespace-nowrap" disabled>
+            <i class="far fa-copy mr-1.5"></i>复制
+          </button>
+          <button id="deleteSelectedBtn" class="flex items-center justify-center px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md whitespace-nowrap" disabled>
+            <i class="fas fa-trash-alt mr-1.5"></i>删除
+          </button>
+          <button id="deleteAllLogsBtn" class="flex items-center justify-center px-4 py-1.5 bg-red-700 hover:bg-red-800 text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap" title="清空所有错误日志">
+            <i class="fas fa-dumpster-fire mr-1.5"></i>清空全部
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto rounded-lg border mb-6" style="border-color: rgba(0, 0, 0, 0.12)">
+        <table class="styled-table w-full min-w-full text-sm">
+          <thead>
+            <tr class="text-left">
+              <th class="px-3 py-3 font-semibold rounded-tl-lg w-12 text-center">
+                <input type="checkbox" id="selectAllCheckbox" class="form-checkbox h-4 w-4 text-blue-500 border-gray-500 rounded focus:ring-blue-500 bg-transparent" />
+              </th>
+              <th class="px-5 py-3 font-semibold text-gray-700 cursor-pointer" id="sortById">
+                ID <i class="fas fa-sort ml-1"></i>
+              </th>
+              <th class="px-5 py-3 font-semibold text-gray-700">Gemini密钥</th>
+              <th class="px-5 py-3 font-semibold text-gray-700">错误类型</th>
+              <th class="px-5 py-3 font-semibold text-gray-700">错误码</th>
+              <th class="px-5 py-3 font-semibold text-gray-700">模型名称</th>
+              <th class="px-5 py-3 font-semibold text-gray-700">请求时间</th>
+              <th class="px-5 py-3 font-semibold text-gray-700 rounded-tr-lg text-center">
+                操作
+              </th>
+            </tr>
+          </thead>
+          <tbody id="errorLogsTable" class="divide-y" style="border-color: rgba(0, 0, 0, 0.08)">
+          </tbody>
+        </table>
+      </div>
+
+      <div id="loadingIndicator" class="flex items-center justify-center p-8 hidden">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <p class="ml-4 text-lg text-gray-600 font-medium">加载中，请稍候...</p>
+      </div>
+
+      <div id="noDataMessage" class="text-center py-12 text-gray-600 hidden">
+        <i class="fas fa-inbox text-5xl mb-3"></i>
+        <p class="text-lg">暂无错误日志数据</p>
+      </div>
+
+      <div id="errorMessage" class="p-4 rounded-lg font-medium text-center hidden" style="background-color: rgba(220, 38, 38, 0.2); color: #fca5a5">
+        <i class="fas fa-exclamation-circle mr-2"></i>
+        加载错误日志失败，请稍后重试。
+      </div>
+
+      <div class="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
+        <div class="pagination-container text-sm text-gray-700">
+          <label for="pageSize" class="font-medium pagination-text">每页显示:</label>
+          <select id="pageSize" class="rounded-md border focus:ring focus:border-blue-500 px-2 py-1 text-sm">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <span class="pagination-text">条</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <ul class="pagination flex items-center gap-1" id="pagination">
+          </ul>
+          <div class="flex items-center gap-1">
+            <input type="number" id="pageInput" min="1" class="w-16 px-2 py-1 rounded-md text-sm form-input-themed" placeholder="页码" />
+            <button id="goToPageBtn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition">
+              跳转
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scroll-buttons">
+  <button class="scroll-button" onclick="scrollToTop()" title="回到顶部">
+    <i class="fas fa-chevron-up"></i>
+  </button>
+  <button class="scroll-button" onclick="scrollToBottom()" title="滚动到底部">
+    <i class="fas fa-chevron-down"></i>
+  </button>
+</div>
+
+<div id="notification" class="notification"></div>
+
+<div id="logDetailModal" class="modal">
+  <div class="w-full max-w-6xl mx-auto rounded-2xl shadow-2xl overflow-hidden animate-fade-in" style="background-color: #ffffff; color: #374151; border: 1px solid #e5e7eb;">
+    <div class="p-6">
+      <div class="flex justify-between items-center pb-4 mb-4" style="border-bottom: 1px solid #e5e7eb">
+        <h2 class="text-xl font-bold text-gray-800">错误日志详情</h2>
+        <button id="closeLogDetailModalBtn" class="text-gray-600 hover:text-gray-800 text-xl">
+          &times;
+        </button>
+      </div>
+
+      <div class="space-y-4 max-h-[60vh] overflow-y-auto p-1">
+        <div class="p-4 rounded-lg relative group" style="background-color: #f8fafc">
+          <h6 class="text-sm font-semibold text-blue-600 mb-1">
+            Gemini密钥:
+          </h6>
+          <pre id="modalGeminiKey" class="font-mono text-sm p-3 rounded overflow-x-auto" style="background-color: #f1f5f9; color: #374151"></pre>
+          <button class="copy-btn absolute top-2 right-2 hover:bg-gray-200 text-gray-600 p-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity" style="background-color: #e2e8f0" data-target="modalGeminiKey" title="复制密钥">
+            <i class="far fa-copy"></i>
+          </button>
+        </div>
+
+        <div class="p-4 rounded-lg relative group" style="background-color: #f8fafc">
+          <h6 class="text-sm font-semibold text-blue-600 mb-1">错误类型:</h6>
+          <p id="modalErrorType" class="text-red-600 font-medium pr-8"></p>
+          <button class="copy-btn absolute top-2 right-2 hover:bg-gray-200 text-gray-600 p-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity" style="background-color: #e2e8f0" data-target="modalErrorType" title="复制错误类型">
+            <i class="far fa-copy"></i>
+          </button>
+        </div>
+
+        <div class="p-4 rounded-lg relative group" style="background-color: #f8fafc">
+          <h6 class="text-sm font-semibold text-blue-600 mb-1">错误日志:</h6>
+          <pre id="modalErrorLog" class="font-mono text-sm p-3 rounded overflow-x-auto whitespace-pre-wrap" style="background-color: #f1f5f9; color: #374151"></pre>
+          <button class="copy-btn absolute top-2 right-2 hover:bg-gray-200 text-gray-600 p-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity" style="background-color: #e2e8f0" data-target="modalErrorLog" title="复制错误日志">
+            <i class="far fa-copy"></i>
+          </button>
+        </div>
+
+        <div class="p-4 rounded-lg relative group" style="background-color: #f8fafc">
+          <h6 class="text-sm font-semibold text-blue-600 mb-1">请求消息:</h6>
+          <pre id="modalRequestMsg" class="font-mono text-sm p-3 rounded overflow-x-auto whitespace-pre-wrap" style="background-color: #f1f5f9; color: #374151"></pre>
+          <button class="copy-btn absolute top-2 right-2 hover:bg-gray-200 text-gray-600 p-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity" style="background-color: #e2e8f0" data-target="modalRequestMsg" title="复制请求消息">
+            <i class="far fa-copy"></i>
+          </button>
+        </div>
+
+        <div class="p-4 rounded-lg relative group" style="background-color: #f8fafc">
+          <h6 class="text-sm font-semibold text-blue-600 mb-1">模型名称:</h6>
+          <p id="modalModelName" class="font-medium pr-8 text-gray-700"></p>
+          <button class="copy-btn absolute top-2 right-2 hover:bg-gray-200 text-gray-600 p-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity" style="background-color: #e2e8f0" data-target="modalModelName" title="复制模型名称">
+            <i class="far fa-copy"></i>
+          </button>
+        </div>
+
+        <div class="p-4 rounded-lg relative group" style="background-color: #f8fafc">
+          <h6 class="text-sm font-semibold text-blue-600 mb-1">请求时间:</h6>
+          <p id="modalRequestTime" class="font-medium pr-8 text-gray-700"></p>
+          <button class="copy-btn absolute top-2 right-2 hover:bg-gray-200 text-gray-600 p-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity" style="background-color: #e2e8f0" data-target="modalRequestTime" title="复制请求时间">
+            <i class="far fa-copy"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex justify-end mt-6 pt-4" style="border-top: 1px solid #e5e7eb">
+        <button type="button" id="closeModalFooterBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition">
+          关闭
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="deleteConfirmModal" class="modal">
+  <div class="w-full max-w-md mx-auto rounded-xl shadow-xl overflow-hidden animate-fade-in" style="background-color: #ffffff; color: #374151; border: 1px solid #e5e7eb;">
+    <div class="p-6">
+      <div class="flex justify-between items-center pb-3 mb-4" style="border-bottom: 1px solid #e5e7eb">
+        <h2 class="text-lg font-semibold text-gray-800">确认删除</h2>
+        <button id="closeDeleteConfirmModalBtn" class="text-gray-600 hover:text-gray-800 text-xl">
+          &times;
+        </button>
+      </div>
+      <p id="deleteConfirmMessage" class="text-gray-700 mb-6">
+        你确定要删除选中的项目吗？此操作不可恢复！
+      </p>
+      <div class="flex justify-end gap-3">
+        <button id="cancelDeleteBtn" type="button" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-lg font-medium transition">
+          取消
+        </button>
+        <button id="confirmDeleteBtn" type="button" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-medium transition">
+          确认删除
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+` })}
